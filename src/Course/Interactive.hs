@@ -1,6 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Course.Interactive where
 
@@ -82,8 +83,9 @@ data Op =
 -- /Tip:/ @putStrLn :: String -> IO ()@ -- Prints a string and then a new line to standard output.
 convertInteractive ::
   IO ()
-convertInteractive =
-  error "todo: Course.Interactive#convertInteractive"
+convertInteractive = do
+  line <- getLine
+  putStrLn (map toUpper line)
 
 -- |
 --
@@ -110,8 +112,14 @@ convertInteractive =
 -- /Tip:/ @putStrLn :: String -> IO ()@ -- Prints a string and then a new line to standard output.
 reverseInteractive ::
   IO ()
-reverseInteractive =
-  error "todo: Course.Interactive#reverseInteractive"
+reverseInteractive = do
+  putStr "Enter input filename: "
+  inF <- getLine
+  putStr "Enter outout filename: "
+  outF <- getLine
+  content <- readFile inF
+  writeFile outF (reverse content)
+  putStrLn ""
 
 -- |
 --
@@ -136,8 +144,17 @@ reverseInteractive =
 -- /Tip:/ @putStrLn :: String -> IO ()@ -- Prints a string and then a new line to standard output.
 encodeInteractive ::
   IO ()
-encodeInteractive =
-  error "todo: Course.Interactive#encodeInteractive"
+encodeInteractive =   putStrLn "Enter url to encode :"
+                  >-  getLine
+                  >>= \line -> putStrLn (encode line)
+                    where
+                      encode :: Chars -> Chars
+                      encode chars = chars >>= \case
+                                                  ' '  -> "%20"
+                                                  '\t' -> "%09"
+                                                  '\"' -> "%22"
+                                                  c    -> c :. Nil
+
 
 interactive ::
   IO ()
