@@ -12,6 +12,7 @@ import Course.List
 import Course.Optional
 import Course.Parser
 import qualified Prelude as P(fmap, (>>=))
+import Data.ByteString (concat)
 
 -- | All instances of the `Alternative` type-class must satisfy three laws.
 -- These laws are not checked by the compiler. These laws are given as:
@@ -59,14 +60,14 @@ infixl 3 <|>
 instance Alternative Optional where
   zero ::
     Optional a
-  zero =
-    error "todo: Course.Alternative zero#instance Optional"
+  zero = Empty
   (<|>) ::
     Optional a
     -> Optional a
     -> Optional a
-  (<|>) =
-    error "todo: Course.Alternative (<|>)#instance Optional"
+  (<|>) oa1 oa2 = case oa1 of
+                    f@(Full _) -> f
+                    _          -> oa2
 
 -- | Append the lists.
 -- This instance views lists as a non-deterministic choice between elements,
@@ -83,14 +84,12 @@ instance Alternative Optional where
 instance Alternative List where
   zero ::
     List a
-  zero =
-    error "todo: Course.Alternative zero#instance List"
+  zero = Nil
   (<|>) ::
     List a
     -> List a
     -> List a
-  (<|>) =
-    error "todo: Course.Alternative (<|>)#instance List"
+  (<|>) = (++)
 
 -- | Choose the first succeeding parser
 --
@@ -110,14 +109,14 @@ instance Alternative List where
 instance Alternative Parser where
   zero ::
     Parser a
-  zero =
-    error "todo: Course.Alternative zero#instance Parser"
+  zero = P $ \_ -> UnexpectedEof
   (<|>) ::
     Parser a
     -> Parser a
     -> Parser a
-  (<|>) =
-    error "todo: Course.Alternative (<|>)#instance Parser"
+  (<|>) pa1 pa2 = P $ \input -> case parse pa1 input of
+                                  r@(Result _ _) -> r
+                                  _              -> parse pa2 input
 
 -- | Run the provided Alternative action zero or more times, collecting
 -- a list of the results.
@@ -142,8 +141,7 @@ instance Alternative Parser where
 -- >>> parse (many (character *> valueParser 'v')) ""
 -- Result >< ""
 many :: Alternative k => k a -> k (List a)
-many =
-  error "todo: Course.Alternative many"
+many a = (some a) <|> (pure Nil)
 
 -- | Run the provided Alternative action one or more times, collecting
 -- a list of the results.
@@ -159,8 +157,7 @@ many =
 -- >>> isErrorResult (parse (some (character *> valueParser 'v')) "")
 -- True
 some :: Alternative k => k a -> k (List a)
-some =
-  error "todo: Course.Alternative some"
+some a = lift2 (:.) a (many a)
 
 -- | Combine a list of alternatives
 --
@@ -175,5 +172,4 @@ some =
 --
 -- /Note:/ In the standard library, this function is called @asum@
 aconcat :: Alternative k => List (k a) -> k a
-aconcat =
-  error "todo: Course.Alternative aconcat"
+aconcat = foldRight (<|>) zero
